@@ -8,5 +8,6 @@
   "END": "187691",
   "RATE": "4",
   "BATCH": "10",
-  "CONFS": "2"
+  "CONFS": "2",
+  "EPOCH_COMMIT": "5e01c6e6604281c5e427f393b81ada91e43ecf118da45df736f62a98bca61eee"
 }

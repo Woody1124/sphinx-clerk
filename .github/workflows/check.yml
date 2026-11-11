@@ -1,0 +1,22 @@
+name: check
+on:
+  workflow_dispatch:
+concurrency:
+  group: check
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Dry run (shows the plan, changes nothing; fails loudly if a secret is missing or wrong)
+        run: node run.mjs
+        env:
+          QBIT_SEED: ${{ secrets.QBIT_SEED }}
+          EPOCH_SECRET: ${{ secrets.EPOCH_SECRET }}

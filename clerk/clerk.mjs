@@ -7,12 +7,12 @@
 // What a payer sends to OWNER:  price with memo "SX1|<commit>[|<address for the seed>]", then, after the window, a small tx with "SX2|<commit>|<nonce>|<answer>".
 import { net, api, qord, log, qbt, sleep, P, walletFromSeed, floatCoins, planBatch, buildBatch, pushWithRetry, broadcast, hex, cborDecode } from "./chain.mjs";
 import "../riddle.js";
-import { riddleFor, decide, WINDOW, REVEAL_BLOCKS } from "../rules.mjs";
+import { riddleFor, decide, WINDOW, REVEAL_BLOCKS, epochCommit } from "../rules.mjs";
 
 const env = process.env;
 export const cfgFromEnv = () => ({
   parent: env.PARENT, lib: env.LIB, owner: env.OWNER, price: BigInt(env.PRICE || "300000000"), cap: +(env.CAP || 3333),
-  start: +(env.START || 0), end: +(env.END || 1e12), rate: +(env.RATE || 4), batch: +(env.BATCH || 10), confs: +(env.CONFS || 2), secret: env.EPOCH_SECRET || "",
+  start: +(env.START || 0), end: +(env.END || 1e12), rate: +(env.RATE || 4), batch: +(env.BATCH || 10), confs: +(env.CONFS || 2), secret: env.EPOCH_SECRET || "", commit: env.EPOCH_COMMIT || "",
 });
 export const childHtml = (parent, lib) =>
   `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>SPHINX SEED</title><body style="margin:0;background:#04040a;overflow:hidden"><script src="/content/${lib}"></script><script>SX.child("${parent}")</script>`;
@@ -109,6 +109,7 @@ export async function run({ send }) {
   const cfg = cfgFromEnv();
   for (const k of ["parent", "lib", "owner"]) if (!cfg[k]) throw new Error(`${k.toUpperCase()} is not set`);
   if (!cfg.secret) throw new Error("EPOCH_SECRET is not set"); P.decodeP2mrAddress(cfg.owner, net.network);
+  if (cfg.commit && epochCommit(cfg.secret) !== cfg.commit) throw new Error("EPOCH_SECRET does not match the key commitment published in the parent: refusing to judge anyone with the wrong key");
   const w = await walletFromSeed(env.QBIT_SEED || "");
   const holder = (await qord(`/r/inscription/${cfg.parent}`)).address;
   if (holder !== w.address) throw new Error(`QBIT_SEED is the key of ${w.address.slice(0, 14)}…, but the parent is held by ${String(holder).slice(0, 14)}…`);
